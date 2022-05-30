@@ -1,0 +1,82 @@
+TYPES OF PLAYS
+Shots
+    -3 pt shot
+    -Mid Range shot
+    -Short Range shot
+    -Layup
+    -Dunk
+    -Free Throw?
+Turnovers
+    -Bad Pass
+    -Travel
+    -Offensive Foul
+    -Stepped out of bounds
+Fouls
+    -Shooting foul
+    -Non shooting foul
+    -Offensive Foul
+    
+Play outcomes
+    -3 pt attempt
+    -Mid Range attempt
+    -Short Range attempt
+    -Layup attempt
+    -Dunk attempt
+    -Turnover - 18%
+    -Foul - 22%, Foul FT - 12%
+    -Block - 6%
+
+Ratings
+    -3pt
+    -mid range
+    -short range
+    -Layup
+    -Dunk
+    -free Throw
+    -pass
+    -dribble
+
+    -speed
+    -jumping
+    
+    -man to man defense
+    -help defense
+    -rebounding
+    
+Workflow
+    -gen wanted offensive shot(3pt, mid, short plus aggression for each divided by 5)
+    -gen defensive prowess (aka their skill in defending the three types)
+    -compare these and determine play
+    -use dribbling and pass to gen wheter shot is open, light contest, or contested/blocked
+
+   percent 3pt 0.377935754	0.377
+possesions per game around 70
+
+
+rebound
+    -off rebound
+        -start possesion again with 20 sec shot clocl
+    def rebound
+        -END possesion
+
+
+possesions
+-shot (blocked or non blocked)
+    -rebound
+-Turnover
+    -END possesion
+-fouled
+    -shooting foul/ in bonus
+        -shoot free throws
+            -if make last one
+                -End possesion
+            -if miss
+                -rebound
+    -non shooting fouls /not in bonus
+        -new possession
+            -reset shot clock to 20 is less than 20
+
+
+3pt percentage avg - 33.5 (maybe divide by 2)
+midRange avg - 43? (divide by 1.5)
+shortRange avg - 70 = divide by 1.1

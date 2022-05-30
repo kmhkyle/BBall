@@ -16,8 +16,6 @@ def genTimeLeft(time_minutes, time_seconds, time_possesion):
         time_seconds -= time_possesion     
     return time_minutes, time_seconds
 
-# time_min, time_sec = genTimeLeft(20, 0, 5)
-
 def display_time(minutes, seconds):
     return '{}:{}'.format(minutes, str(seconds).zfill(2))
 
