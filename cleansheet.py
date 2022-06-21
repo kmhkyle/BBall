@@ -1,5 +1,17 @@
 
-from random import randint, randrange, uniform
+from random import randint, uniform
+
+''' things to do
+-generate actual player ratings and heights/weights (positions too)
+-generate player turnovers based on passing/dribbling skill/perent of offense run through player
+-generate player and team blocks (taller players and good defeenders on average get more)
+-generate player fouls (worse/more aggresive/rim protectors get more)
+-implement bonus free throw rules
+-generate full team (15 players) and generate depth chart
+-implement subs
+'''
+
+
 
 def weightedDict(data):
     num = uniform(0, sum(data.values()))
@@ -29,7 +41,18 @@ class player:
         self.jumping = randint(72, 84)
         self.manDefense = randint(72, 84)
         self.helpDefense = randint(72, 84)      
-    
+        self.stats = {
+            'points': 0,
+            'rebounds': 0,
+            'assists': 0,
+            'turnovers': 0,
+            'fouls': 0,
+            'blocks':0,
+            'field goals attempted': 0,
+            'field goals made': 0,
+            'free throws attemped': 0,
+            'free throws made': 0,
+        }
 
 class team:
     def __init__(self):
@@ -44,6 +67,19 @@ class team:
         self.playerRebound = {}
         self.playerAssist = {}
         self.teamFouls = 0
+        self.score = 0
+        self.stats = {
+            'points': 0,
+            'rebounds': 0,
+            'assists': 0,
+            'turnovers': 0,
+            'fouls': 0,
+            'blocks':0,
+            'field goals attempted': 0,
+            'field goals made': 0,
+            'free throws attemped': 0,
+            'free throws made': 0,
+        }
         PID = 0
         # gen team
         for i in range(5):
@@ -51,7 +87,7 @@ class team:
         # calc team ratings
         for person in self.players:
             for attr, value in person.__dict__.items():
-                if attr not in ['height', 'weight']:
+                if attr not in ['height', 'weight', 'stats']:
                     if attr not in self.teamAttr:
                         self.teamAttr[attr] = value
                     else:
@@ -108,6 +144,8 @@ def makeOrMissShot(offense, defense, player, shotType):
     off3ptShotModifer = (offense.teamAttr['passing'] * .65) + (offense.teamAttr['dribbling'] * .35)
     offMidShotModifer = (offense.teamAttr['passing'] * .50) + (offense.teamAttr['dribbling'] * .50)
     offCloseShotModifer = (offense.teamAttr['passing'] * .40) + (offense.teamAttr['dribbling'] * .60)
+    player.stats['field goals attempted'] += 1
+    offense.stats['field goals attempted'] += 1
     if shotType == 'three':
         defenseModifier = off3ptShotModifer - defense.defRatings['threePointDef']
         shotRating = player.threePoint + defenseModifier
@@ -122,17 +160,43 @@ def makeOrMissShot(offense, defense, player, shotType):
         makeShotChance = shotRating / 1.25
     randomNumber = uniform(0, 100)
     if makeShotChance >= randomNumber:
-        # print(makeShotChance, randomNumber, 'made')
+        player.stats['field goals made'] += 1
+        offense.stats['field goals made'] += 1
+        if shotType == 'three':
+            offense.score += 3
+            player.stats['points'] += 3
+            offense.stats['points'] += 3
+        else:
+            offense.score += 2
+            player.stats['points'] += 2
+            offense.stats['points'] += 2
         return True
     else:
-        # print(makeShotChance, randomNumber, 'miss')
         return False
-    
-    
-    # print(off3ptShotModifer)
 
+def shootFT(player, offense, numFT):
+    lastMade = False
+    for i in range(numFT):
+        player.stats['free throws attemped'] += 1
+        offense.stats['free throws attemped'] += 1
+        randomNumber = uniform(0, 100)
+        if player.freeThrow  * .95 > randomNumber:
+            offense.score += 1
+            player.stats['free throws made'] += 1
+            offense.stats['free throws made'] += 1
+            player.stats['points'] += 1
+            offense.stats['points'] += 1
+            lastMade = True
+        else:
+            lastMade = False
+    return lastMade
 
-
+def genFoulType():
+    fouls = {
+        'shooting': 50,
+        'non - shooting': 50
+    }
+    return weightedDict(fouls)
 
 def genPossesion(offense, defense):
     shotClock = 30
@@ -142,40 +206,84 @@ def genPossesion(offense, defense):
         'foul': 20,
         'turnover': 15
     }
-    possesion = True
-    while possesion:
+    # possesion = True
+    while True:
         outcome = weightedDict(possesionOdds)
+        print('outcome is ', outcome)
         if outcome == 'turnover':
-            possesion = False
+            offense.stats['turnovers'] += 1
+            break
         elif outcome == 'foul':
+            offense.stats['fouls'] += 1
             defense.teamFouls += 1
-            possesion = False
+            foul = genFoulType()
+            print(foul)
+            # NEED TO ADD BONUS 1 AND 1 FOR NON SHOOINTG FOULS BETWEEN 7-9
+            if foul == 'shooting' or defense.teamFouls > 6:
+                print('shooting fould')
+                if shootFT(offense.players[weightedDict(offense.playerShootClose)], offense, 2):
+                    print('made free throw')
+                    break
+                else:
+                    if offRebound(offense, defense):
+                        print('non shooting foul')
+                        continue
+                    else:
+                        print('free throw miss and d rebound')
+                        break
+            else:
+                continue
         elif outcome == 'attemptShot':
             if genShot(offense, defense):
-                possesion = False
+                # work on assist generation
+                assistChance = 55 + (offense.teamAttr['passing'] - 78)
+                randomNumber = uniform(0, 100)
+                if assistChance > randomNumber:
+                    offense.stats['assists'] += 1
+                    assister = offense.players[weightedDict(offense.playerAssist)]
+                    assister.stats['assists'] += 1
+                print('made')
+                break
             else:
-                rebound()
+                if offRebound(offense, defense):
+                    print('off rebound')
+                    continue
+                else:
+                    print('def rebound')
+                    break   
 
+def offRebound(offense, defense):
+    baseOffRebound = 26
+    randomNumber = uniform(0, 100)
+    reboundModifier = offense.teamAttr['rebound'] - defense.teamAttr['rebound']
+    offReboundChance = baseOffRebound + reboundModifier
+    offRebound = offReboundChance > randomNumber
+    if offRebound:
+        offense.stats['rebounds'] += 1
+        rebounder = offense.players[weightedDict(offense.playerRebound)]
         
-        # print(x)
-        # if x> 3:
-        #     possesion = False
-    # print(weightedDict(possesionOdds))
-    attemptShot, turnover, foul = 65, 15, 20
-    # print(attemptShot + turnover + foul)
-
-# def rebound(offense, defense):
+    else:
+        defense.stats['rebounds'] += 1
+        rebounder = defense.players[weightedDict(defense.playerRebound)]
+    rebounder.stats['rebounds'] += 1
+    return offRebound
     
 
+
+def game(team1, team2):
+    offense, defense = team1, team2
+    for i in range(140):
+        genPossesion(offense, defense)
+        offense, defense = defense, offense
+    print(offense.score, defense.score)
 
 team1 = team()
 team2 = team()
 
-# makeOrMissShot(team1, team2, team1.players[0], 'three')
-# for i in range(20):
-#     makeOrMissShot(team1, team2, team1.players[0], 'three')
-#     genPossesion(team1,team2)
+game(team1, team2)
 
-# genShot(team1, team2)
-
+for p in team1.players:
+    print(p.stats)
+print(team1.stats)
+print(team2.stats)
 
